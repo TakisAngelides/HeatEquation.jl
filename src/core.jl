@@ -8,14 +8,15 @@ field prev. a is the diffusion constant and dt is the largest
 stable time step.    
 """
 function evolve!(curr::Field, prev::Field, a, dt)
-    # The @inbounds macro eliminates array bounds checking within expressions which can save considerable time. 
-    # This should only be used if you are sure that no out-of-bounds indices are used.
-    # Less branching: Every bounds check adds conditional branching (if i > length(A) …). Removing it avoids these branches, which can be expensive inside tight loops.
-    # Better vectorization: Modern CPUs can vectorize loops more efficiently if there are no branches. @inbounds allows Julia to generate SIMD-friendly code.
-    # Loop fusion: Removing bounds checks enables the compiler to fuse loops and optimize memory access patterns more aggressively.
-    # The speed-up is especially noticeable for small, tight (= simple operations no function calls or branches) loops over large arrays.
-    Threads.@threads for j = 2:curr.ny+1
-        for i = 2:curr.nx+1
+    # The threads macro parallelizes the outer loop over j, julia is column-major so accessing rows at fixed column is more cache friendly
+    # Modern CPUs have cache memory (L1, L2, L3) that is:
+    # much faster than RAM (like 100× faster)
+    # loaded in cache lines (chunks of 64 bytes)
+    # When your program accesses an array element, the CPU loads the entire cache line containing that element.
+    # If you then access nearby memory, it is already in cache → super fast. 
+    # If you jump to far-away memory, the CPU must fetch a new cache line from RAM → slow.
+    Threads.@threads for j = 2:curr.ny+1 # Outer loop j assigns different columns to different threads.
+        for i = 2:curr.nx+1 # inner loop which is changing the fastest accesses memory contiguously
             @inbounds xderiv = (prev.data[i-1, j] - 2.0 * prev.data[i, j] + prev.data[i+1, j]) / curr.dx^2
             @inbounds yderiv = (prev.data[i, j-1] - 2.0 * prev.data[i, j] + prev.data[i, j+1]) / curr.dy^2
             @inbounds curr.data[i, j] = prev.data[i, j] + a * dt * (xderiv + yderiv)
