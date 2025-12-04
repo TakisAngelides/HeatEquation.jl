@@ -1,19 +1,3 @@
-# Fixed grid spacing
-const DX = 0.01
-const DY = 0.01
-# Default temperatures
-const T_DISC = 5.0
-const T_AREA = 65.0
-const T_UPPER = 85.0
-const T_LOWER = 5.0
-const T_LEFT = 20.0
-const T_RIGHT = 70.0
-# Default problem size
-const ROWS = 2000
-const COLS = 2000
-const NSTEPS = 500
-
-
 """
     Field(nx::Int64, ny::Int64, dx::Float64, dy::Float64, data::Matrix{Float64})
 
@@ -32,7 +16,7 @@ mutable struct Field{T<:AbstractArray}
 end
 
 # outer constructor with default cell sizes and initialized data
-Field(nx::Int64, ny::Int64, data) = Field{typeof(data)}(nx, ny, 0.01, 0.01, data)
+Field(nx::Int64, ny::Int64, data) = Field{typeof(data)}(nx, ny, DX, DY, data)
 
 # extend deepcopy to new type
 Base.deepcopy(f::Field) = Field(f.nx, f.ny, f.dx, f.dy, deepcopy(f.data))

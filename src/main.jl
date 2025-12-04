@@ -1,5 +1,20 @@
-#using Plots
+using Plots
 using BenchmarkTools
+
+# Fixed grid spacing
+const DX = 0.01
+const DY = 0.01
+# Default temperatures
+const T_DISC = 5.0
+const T_AREA = 120.0
+const T_UPPER = 85.0
+const T_LOWER = 5.0
+const T_LEFT = 20.0
+const T_RIGHT = 70.0
+# Default problem size
+const ROWS = 256
+const COLS = 256
+const NSTEPS = 10000
 
 include("heat.jl")
 include("core.jl")
@@ -26,17 +41,19 @@ function visualize(curr::Field, filename=:none)
 end
 
 
-ncols, nrows = 2048, 2048
-nsteps = 10
-
-# initialize current and previous states to the same state
-curr, prev = initialize(ncols, nrows)
-
-# visualize initial field, requires Plots.jl
-#visualize(curr, "initial.png")
+ncols, nrows = COLS, ROWS
+nsteps = NSTEPS
 
 # simulate temperature evolution for nsteps
-simulate!(curr, prev, nsteps)
+@btime begin 
+
+    # initialize current and previous states to the same state
+    curr, prev = initialize($ncols, $nrows)
+    
+    # run simulation
+    simulate!(curr, prev, $nsteps)
+
+end
 
 # visualize final field, requires Plots.jl
-#visualize(curr, "final.png")
+# visualize(curr, "images/final.png")
