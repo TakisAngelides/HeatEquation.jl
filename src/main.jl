@@ -1,6 +1,7 @@
 using Plots
 using BenchmarkTools
 
+
 # Fixed grid spacing
 const DX = 0.01
 const DY = 0.01
@@ -12,8 +13,8 @@ const T_LOWER = 5.0
 const T_LEFT = 20.0
 const T_RIGHT = 70.0
 # Default problem size
-const ROWS = 256
-const COLS = 256
+const ROWS = 128
+const COLS = 128
 const NSTEPS = 10000
 
 include("heat.jl")
@@ -41,19 +42,9 @@ function visualize(curr::Field, filename=:none)
 end
 
 
-ncols, nrows = COLS, ROWS
-nsteps = NSTEPS
-
 # simulate temperature evolution for nsteps
-@btime begin 
-
-    # initialize current and previous states to the same state
-    curr, prev = initialize($ncols, $nrows)
-    
-    # run simulation
-    simulate!(curr, prev, $nsteps)
-
-end
+benchmark_esult = @benchmark simulate!(curr, prev, $NSTEPS) setup = curr, prev = initialize($COLS, $ROWS) samples = 5 evals = 1
+display(benchmark_esult)
 
 # visualize final field, requires Plots.jl
 # visualize(curr, "images/final.png")
