@@ -13,8 +13,8 @@ const T_LOWER = 5.0
 const T_LEFT = 20.0
 const T_RIGHT = 70.0
 # Default problem size
-const ROWS = 128
-const COLS = 128
+const ROWS = 4096
+const COLS = 4096
 const NSTEPS = 500
 
 include("heat.jl")
