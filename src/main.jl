@@ -43,8 +43,8 @@ end
 
 
 # simulate temperature evolution for nsteps
-benchmark_esult = @benchmark simulate!(curr, prev, $NSTEPS) setup = curr, prev = initialize($COLS, $ROWS) samples = 5 evals = 1
-display(benchmark_esult)
+benchmark_result = @benchmark simulate!(curr, prev, $NSTEPS) setup = curr, prev = initialize($COLS, $ROWS) samples = 5 evals = 1
+display(benchmark_result)
 
 # visualize final field, requires Plots.jl
 # visualize(curr, "images/final.png")
