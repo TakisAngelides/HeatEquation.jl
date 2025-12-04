@@ -1,8 +1,6 @@
 module HeatEquation # This defines the module named HeatEquation
 
-using ProgressMeter
-using Plots
-using BenchmarkTools
+using Distributed
 
 # This runs the simulation when the package is included
 include("main.jl")

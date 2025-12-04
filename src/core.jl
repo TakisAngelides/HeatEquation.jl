@@ -1,5 +1,3 @@
-using ProgressMeter
-
 """
     evolve!(curr::Field, prev::Field, a, dt)
 
@@ -7,19 +5,14 @@ Calculate a new temperature field curr based on the previous
 field prev. a is the diffusion constant and dt is the largest 
 stable time step.    
 """
-function evolve!(curr::Field, prev::Field, a, dt)
-    # The threads macro parallelizes the outer loop over j, julia is column-major so accessing rows at fixed column is more cache friendly
-    # Modern CPUs have cache memory (L1, L2, L3) that is:
-    # much faster than RAM (like 100× faster)
-    # loaded in cache lines (chunks of 64 bytes)
-    # When your program accesses an array element, the CPU loads the entire cache line containing that element.
-    # If you then access nearby memory, it is already in cache → super fast. 
-    # If you jump to far-away memory, the CPU must fetch a new cache line from RAM → slow.
-    Threads.@threads for j = 2:curr.ny+1 # Outer loop j assigns different columns to different threads.
-        for i = 2:curr.nx+1 # inner loop which is changing the fastest accesses memory contiguously
-            @inbounds xderiv = (prev.data[i-1, j] - 2.0 * prev.data[i, j] + prev.data[i+1, j]) / curr.dx^2
-            @inbounds yderiv = (prev.data[i, j-1] - 2.0 * prev.data[i, j] + prev.data[i, j+1]) / curr.dy^2
-            @inbounds curr.data[i, j] = prev.data[i, j] + a * dt * (xderiv + yderiv)
+function evolve!(currdata::SharedArray, prevdata::SharedArray, dt) # this function will modify the data of the curr and prev objects
+    nx, ny = size(currdata) .- 2
+
+    @sync @distributed for j = 2:ny+1 
+        for i = 2:nx+1 
+            @inbounds xderiv = (prevdata[i-1, j] - 2.0 * prevdata[i, j] + prevdata[i+1, j]) / DX^2
+            @inbounds yderiv = (prevdata[i, j-1] - 2.0 * prevdata[i, j] + prevdata[i, j+1]) / DY^2
+            @inbounds currdata[i, j] = prevdata[i, j] + A * dt * (xderiv + yderiv)
         end 
     end
 end
@@ -51,10 +44,8 @@ function simulate!(curr::Field, prev::Field, nsteps)
 
     # println("Initial average temperature: $(average_temperature(curr))")
 
-    # Diffusion constant
-    a = 0.5
     # Largest stable time step
-    dt = curr.dx^2 * curr.dy^2 / (2.0 * a * (curr.dx^2 + curr.dy^2))
+    dt = DX^2 * DY^2 / (2.0 * A * (DX^2 + DY^2))
     
     # display a nice progress bar
     # p = Progress(nsteps)
@@ -62,7 +53,7 @@ function simulate!(curr::Field, prev::Field, nsteps)
     for _ = 1:nsteps
         
         # calculate new state based on previous state
-        evolve!(curr, prev, a, dt)
+        evolve!(curr.data, prev.data, dt)
 
         # swap current and previous fields
         swap_fields!(curr, prev)

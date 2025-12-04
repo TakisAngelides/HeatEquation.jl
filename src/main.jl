@@ -1,6 +1,8 @@
+using Distributed
+using SharedArrays
+using ProgressMeter
 using Plots
 using BenchmarkTools
-
 
 # Fixed grid spacing
 const DX = 0.01
@@ -12,6 +14,7 @@ const T_UPPER = 85.0
 const T_LOWER = 5.0
 const T_LEFT = 20.0
 const T_RIGHT = 70.0
+const A = 0.5 # Diffusion constant
 # Default problem size
 const ROWS = 4096
 const COLS = 4096
@@ -45,5 +48,5 @@ end
 # Here we benchmark the simulation, the variables passed with $ are passed like this so that they are not included in the benchmark timing
 # Specifically: $x means: “Insert the value of x directly into the benchmarked expression to avoid measuring global variable lookup.”
 # Important to initialize the fields for every sample, otherwise after the first run the fields will already be in the steady state and the benchmark will not be representative
-benchmark_result = @benchmark simulate!(curr, prev, $NSTEPS) setup = curr, prev = initialize($COLS, $ROWS) samples = 2 evals = 1
+benchmark_result = @benchmark simulate!(curr, prev, $NSTEPS) setup = curr, prev = initialize($COLS, $ROWS, SharedArray) samples = 2 evals = 1
 display(benchmark_result)
