@@ -8,7 +8,7 @@ stable time step.
 function evolve!(currdata::SharedArray, prevdata::SharedArray, dt) # this function will modify the data of the curr and prev objects
     nx, ny = size(currdata) .- 2
 
-    @sync @distributed for j = 2:ny+1 
+    @sync @distributed for j = 2:ny+1 # the threading branch is 3 times faster than this branch
         for i = 2:nx+1 
             @inbounds xderiv = (prevdata[i-1, j] - 2.0 * prevdata[i, j] + prevdata[i+1, j]) / DX^2
             @inbounds yderiv = (prevdata[i, j-1] - 2.0 * prevdata[i, j] + prevdata[i, j+1]) / DY^2
