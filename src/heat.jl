@@ -1,5 +1,5 @@
 """
-    Field(nx::Int64, ny::Int64, dx::Float64, dy::Float64, data::Matrix{Float64})
+    Field(nx::Int64, ny::Int64, dx::Float32, dy::Float32, data::Matrix{Float32})
 
 Temperature field type. nx and ny are the dimensions of the field. 
 The array data contains also ghost layers, so it will have dimensions 
@@ -9,8 +9,8 @@ mutable struct Field{T<:AbstractArray}
     nx::Int64
     ny::Int64
     # Size of the grid cells
-    dx::Float64
-    dy::Float64
+    dx::Float32
+    dy::Float32
     # The temperature values in the 2D grid
     data::T
 end
@@ -29,19 +29,12 @@ rows and columns. If the arraytype is something else than Matrix,
 create data on the CPU first to avoid scalar indexing errors.
 """
 function initialize(nrows = 1000, ncols = 1000, arraytype = Matrix)
-    data = zeros(nrows+2, ncols+2)
-    
-    # generate a field with boundary conditions
-    if arraytype != Matrix
-        tmp = Field(nrows, ncols, data)
-        generate_field!(tmp)
-        newdata = arraytype(tmp.data)
-        previous = Field(nrows, ncols, newdata)
-    else
-        previous = Field(nrows, ncols, data)
-        generate_field!(previous)
-    end
-    
+
+    data = arraytype(zeros(Float32, nrows+2, ncols+2))
+    previous = Field(nrows, ncols, data)
+
+    # generate a specific field with boundary conditions
+    generate_field!(previous)
     current = Base.deepcopy(previous)
 
     return previous, current

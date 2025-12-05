@@ -1,7 +1,5 @@
 module HeatEquation # This defines the module named HeatEquation
 
-using Distributed
-
 # This runs the simulation when the package is included
 include("main.jl")
 

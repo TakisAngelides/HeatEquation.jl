@@ -1,8 +1,7 @@
-using Distributed
-using SharedArrays
 using ProgressMeter
 using Plots
 using BenchmarkTools
+using Metal
 
 # Fixed grid spacing
 const DX = 0.01
@@ -48,5 +47,5 @@ end
 # Here we benchmark the simulation, the variables passed with $ are passed like this so that they are not included in the benchmark timing
 # Specifically: $x means: “Insert the value of x directly into the benchmarked expression to avoid measuring global variable lookup.”
 # Important to initialize the fields for every sample, otherwise after the first run the fields will already be in the steady state and the benchmark will not be representative
-benchmark_result = @benchmark simulate!(curr, prev, $NSTEPS) setup = curr, prev = initialize($COLS, $ROWS, SharedArray) samples = 2 evals = 1
+benchmark_result = @benchmark simulate!(curr, prev, $NSTEPS) setup = curr, prev = initialize($COLS, $ROWS, MtlArray) samples = 2 evals = 1
 display(benchmark_result)

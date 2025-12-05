@@ -5,16 +5,19 @@ Calculate a new temperature field curr based on the previous
 field prev. a is the diffusion constant and dt is the largest 
 stable time step.    
 """
-function evolve!(currdata::SharedArray, prevdata::SharedArray, dt) # this function will modify the data of the curr and prev objects
-    nx, ny = size(currdata) .- 2
+function evolve!(currdata, prevdata, dx2, dy2, nx, ny, a, dt) # this function will modify the data of the curr and prev objects
 
-    @sync @distributed for j = 2:ny+1 # the threading branch is 3 times faster than this branch
-        for i = 2:nx+1 
-            @inbounds xderiv = (prevdata[i-1, j] - 2.0 * prevdata[i, j] + prevdata[i+1, j]) / DX^2
-            @inbounds yderiv = (prevdata[i, j-1] - 2.0 * prevdata[i, j] + prevdata[i, j+1]) / DY^2
-            @inbounds currdata[i, j] = prevdata[i, j] + A * dt * (xderiv + yderiv)
-        end 
+    pos = thread_position_in_grid()
+    i, j = pos.x, pos.y
+
+    if i > 1 && j > 1 && i < nx+2 && j < ny+2
+        @inbounds xderiv = (prevdata[i-1, j] - 2.0 * prevdata[i, j] + prevdata[i+1, j]) / dx2
+        @inbounds yderiv = (prevdata[i, j-1] - 2.0 * prevdata[i, j] + prevdata[i, j+1]) / dy2
+        @inbounds currdata[i, j] = prevdata[i, j] + a * dt * (xderiv + yderiv)
     end
+
+    return nothing
+
 end
 
 """
@@ -45,15 +48,20 @@ function simulate!(curr::Field, prev::Field, nsteps)
     # println("Initial average temperature: $(average_temperature(curr))")
 
     # Largest stable time step
-    dt = DX^2 * DY^2 / (2.0 * A * (DX^2 + DY^2))
+    dx2, dy2 = DX^2, DY^2
+    dt = dx2 * dy2 / (2.0 * A * (dx2 + dy2))
+    nx, ny = curr.nx, curr.ny
+    a = A
     
     # display a nice progress bar
     # p = Progress(nsteps)
 
     for _ = 1:nsteps
         
+        threads = 16, 16
+        groups = cld(nx, threads[1]), cld(ny, threads[2])
         # calculate new state based on previous state
-        evolve!(curr.data, prev.data, dt)
+        @sync @metal threads=threads groups=groups evolve!(curr.data, prev.data, dx2, dy2, nx, ny, a, dt)
 
         # swap current and previous fields
         swap_fields!(curr, prev)
