@@ -1,7 +1,6 @@
 using Plots
 using BenchmarkTools
 
-
 # Fixed grid spacing
 const DX = 0.01
 const DY = 0.01
