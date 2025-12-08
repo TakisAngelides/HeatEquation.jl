@@ -1,7 +1,3 @@
-using Plots
-using BenchmarkTools
-
-
 # Fixed grid spacing
 const DX = 0.01
 const DY = 0.01
@@ -41,9 +37,18 @@ function visualize(curr::Field, filename=:none)
     end
 end
 
-# simulate temperature evolution for nsteps
-# Here we benchmark the simulation, the variables passed with $ are passed like this so that they are not included in the benchmark timing
-# Specifically: $x means: “Insert the value of x directly into the benchmarked expression to avoid measuring global variable lookup.”
-# Important to initialize the fields for every sample, otherwise after the first run the fields will already be in the steady state and the benchmark will not be representative
-benchmark_result = @benchmark simulate!(curr, prev, $NSTEPS) setup = curr, prev = initialize($COLS, $ROWS) samples = 2 evals = 1
-display(benchmark_result)
+r = @allocated curr, prev = initialize(COLS, ROWS)
+# println(r/10^6, " MB allocated for initializing fields of size $(COLS)x$(ROWS)")
+simulate!(curr, prev, NSTEPS)
+
+function run_profile_simulation()
+    curr, prev = initialize(COLS, ROWS)
+    simulate!(curr, prev, NSTEPS)
+end
+
+# @profile (for _ in 1:10 run_profile_simulation() end)
+# Profile.print(format=:flat; sortedby = :count) # :flat or :tree
+# Profile.clear() # clear the collected profiling data
+
+# Profile.@profile_walltime run_profile_simulation() # this captures also tasks that are sleeping on a sync primitive
+# pprof()

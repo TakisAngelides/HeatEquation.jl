@@ -1,5 +1,3 @@
-using ProgressMeter
-
 """
     evolve!(curr::Field, prev::Field, a, dt)
 
@@ -14,11 +12,11 @@ function evolve!(curr::Field, prev::Field, a, dt)
     # Better vectorization: Modern CPUs can vectorize loops more efficiently if there are no branches. @inbounds allows Julia to generate SIMD-friendly code.
     # Loop fusion: Removing bounds checks enables the compiler to fuse loops and optimize memory access patterns more aggressively.
     # The speed-up is especially noticeable for small, tight (= simple operations no function calls or branches) loops over large arrays.
-    @inbounds for j = 2:curr.ny+1
+    Threads.@threads for j = 2:curr.ny+1
         for i = 2:curr.nx+1
-            xderiv = (prev.data[i-1, j] - 2.0 * prev.data[i, j] + prev.data[i+1, j]) / curr.dx^2
-            yderiv = (prev.data[i, j-1] - 2.0 * prev.data[i, j] + prev.data[i, j+1]) / curr.dy^2
-            curr.data[i, j] = prev.data[i, j] + a * dt * (xderiv + yderiv)
+            @inbounds xderiv = (prev.data[i-1, j] - 2.0 * prev.data[i, j] + prev.data[i+1, j]) / curr.dx^2
+            @inbounds yderiv = (prev.data[i, j-1] - 2.0 * prev.data[i, j] + prev.data[i, j+1]) / curr.dy^2
+            @inbounds curr.data[i, j] = prev.data[i, j] + a * dt * (xderiv + yderiv)
         end 
     end
 end

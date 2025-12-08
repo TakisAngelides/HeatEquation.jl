@@ -29,7 +29,9 @@ rows and columns. If the arraytype is something else than Matrix,
 create data on the CPU first to avoid scalar indexing errors.
 """
 function initialize(nrows = 1000, ncols = 1000, arraytype = Matrix)
-    data = zeros(nrows+2, ncols+2)
+    
+    r1 = @allocated data = zeros(nrows+2, ncols+2)
+    # println(r1/10^6, " MB allocated for temporary array of size $(ncols+2)x$(nrows+2)")
     
     # generate a field with boundary conditions
     if arraytype != Matrix
